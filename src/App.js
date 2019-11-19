@@ -5,7 +5,7 @@ import { getTokenAddressInfo } from "./eth";
 import { exampleAddress } from "./constants";
 
 function App() {
-  const fromBlock = 8640 * 30; //average number of blocks in a month;
+  const fromBlock = 6000 * 30; //average number of blocks in a month;
   const [address, setAddress] = useState("");
 
   const [{ data, isLoading }, search] = useEthAddressSearch(fromBlock, nec);
@@ -31,11 +31,12 @@ function App() {
         />
         <br />
         <br />
+        <br />
         <button onClick={() => setAddress(exampleAddress)}>
           Use example address
         </button>
         <button type="submit" disabled={!address}>
-          Find
+          Search
         </button>
       </form>
       <br />
@@ -66,6 +67,7 @@ function useEthAddressSearch(fromBlock, tokenInfo) {
           setIsLoading(false);
           setData(result);
         } catch (e) {
+          console.log(e);
           setIsLoading(false);
           setIsError(true);
         }

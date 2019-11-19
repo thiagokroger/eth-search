@@ -31,8 +31,7 @@ export const getTokenAddressInfo = async (ethAddress, tokenInfo, fromBlock) => {
   const eth = new Eth(apiUrl);
 
   const currentBlockNumber = await eth.getBlockNumber();
-  // if no block to start looking from is provided, look at tx from the last day
-  // 86400s in a day / eth block time 10s ~ 8640 blocks a day
+
   fromBlock = currentBlockNumber - fromBlock;
 
   const contract = new eth.Contract(abi, address);
@@ -51,18 +50,28 @@ export const getTokenAddressInfo = async (ethAddress, tokenInfo, fromBlock) => {
   );
 
   let balance = 0;
-  const transactions = deposits
+  let transactions = deposits
     .concat(transfers)
     .sort((a, b) => b.blockNumber - a.blockNumber)
     .map(item => {
-      const amount = item.returnValues._amount * Math.pow(10, -decimals);
-      balance += item.type === "in" ? amount : -amount;
+      const amount =
+        item.returnValues._amount *
+        Math.pow(10, -decimals) *
+        (item.type === "in" ? 1 : -1);
+      balance += amount;
       return {
         ...item,
+        currentBlockNumber,
         amount,
         balance
       };
     });
 
-  return { balance, transactions };
+  // I'm sure there's a way to improve this with batch requests or another way to calculate the timestamp
+  for (let item of transactions) {
+    const block = await eth.getBlock(item.blockNumber, false, () => {});
+    item.timestamp = block.timestamp * 1000;
+  }
+
+  return { balance, transactions, suffix: tokenInfo.id };
 };
